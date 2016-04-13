@@ -28,13 +28,20 @@ Meteor.methods({
       return false;
     }
 
-    return ReactionCore.Collections.Shipping.update(
+    let updatedDoc = ReactionCore.Collections.Shipping.update(
       {"methods._id": docId},
       {
         $set: {
           "methods.$": updateDoc
         }
       });
+
+    if (updatedDoc) {
+      ReactionCore.Log.info("Updated method: " + docId + " " + updateDoc.name);
+      return true;
+    }
+    ReactionCore.Log.warn("Could not update shipping method for method: " + docId);
+    return false;
   },
 
   /*
