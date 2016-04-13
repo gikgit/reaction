@@ -159,7 +159,7 @@ Package.onTest(function (api) {
   api.use("reactioncommerce:core@0.13.0");
 
   // server integration tests
-  api.addFiles("tests/jasmine/server/integration/methods.js", "server");
-  api.addFiles("tests/jasmine/server/integration/shops.js", "server");
-  api.addFiles("tests/jasmine/server/integration/cart.js", "server");
+  api.addFiles("server/apptests/methods.app-test.js", "server");
+  api.addFiles("server/apptests/shops.app-test.js", "server");
+  api.addFiles("server/apptests/cart.app-test.js", "server");
 });
