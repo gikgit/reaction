@@ -119,7 +119,7 @@ Template.addShippingProvider.events({
  * template addShippingMethods events
  */
 Template.addShippingMethod.events({
-  "click .cancel"(event){
+  "click .cancel"(event) {
     event.preventDefault();
     toggleSession("selectedAddShippingMethod");
   }
@@ -244,7 +244,7 @@ AutoForm.hooks({
     onSubmit(doc) {
       let error;
       try {
-        Meteor.call("updateShippingMethods", Template.parentData(2)._id, Template.parentData(1), doc);
+        Meteor.call("updateShippingMethods", Template.parentData(1)._id, Template.parentData(1), doc);
         this.done();
       } catch (_error) {
         error = _error;

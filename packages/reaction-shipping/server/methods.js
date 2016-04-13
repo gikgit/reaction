@@ -5,14 +5,14 @@ Meteor.methods({
   addShippingMethod: function (insertDoc, currentDoc) {
     check(insertDoc, Object);
     check(currentDoc, String);
-    if (!Roles.userIsInRole(Meteor.userId(), ['admin', 'shipping'])) {
+    if (!Roles.userIsInRole(Meteor.userId(), ["admin", "shipping"])) {
       return false;
     }
     return ReactionCore.Collections.Shipping.update({
-      '_id': currentDoc
+      _id: currentDoc
     }, {
       $addToSet: {
-        'methods': insertDoc
+        methods: insertDoc
       }
     });
   },
@@ -24,18 +24,17 @@ Meteor.methods({
     check(docId, String);
     check(currentDoc, Object);
     check(updateDoc, Object);
-    if (!Roles.userIsInRole(Meteor.userId(), ['admin', 'shipping'])) {
+    if (!Roles.userIsInRole(Meteor.userId(), ["admin", "shipping"])) {
       return false;
     }
-    updateDoc = ReactionCore.Collections.Shipping.update({
-      '_id': docId,
-      'methods': currentDoc
-    }, {
-      $set: {
-        'methods.$': updateDoc
-      }
-    });
-    return updateDoc;
+
+    return ReactionCore.Collections.Shipping.update(
+      {"methods._id": docId},
+      {
+        $set: {
+          "methods.$": updateDoc
+        }
+      });
   },
 
   /*
@@ -44,15 +43,15 @@ Meteor.methods({
   removeShippingMethod: function (providerId, removeDoc) {
     check(providerId, String);
     check(removeDoc, Object);
-    if (!Roles.userIsInRole(Meteor.userId(), ['admin', 'shipping'])) {
+    if (!Roles.userIsInRole(Meteor.userId(), ["admin", "shipping"])) {
       return false;
     }
     return ReactionCore.Collections.Shipping.update({
-      '_id': providerId,
-      'methods': removeDoc
+      "_id": providerId,
+      "methods": removeDoc
     }, {
       $pull: {
-        'methods': removeDoc
+        "methods": removeDoc
       }
     });
   },
@@ -62,7 +61,7 @@ Meteor.methods({
    */
   addShippingProvider: function (doc) {
     check(doc, Object);
-    if (!Roles.userIsInRole(Meteor.userId(), ['admin', 'shipping'])) {
+    if (!Roles.userIsInRole(Meteor.userId(), ["admin", "shipping"])) {
       return false;
     }
     return ReactionCore.Collections.Shipping.insert(doc);
@@ -74,11 +73,11 @@ Meteor.methods({
   updateShippingProvider: function (updateDoc, currentDoc) {
     check(updateDoc, Object);
     check(currentDoc, String);
-    if (!Roles.userIsInRole(Meteor.userId(), ['admin', 'shipping'])) {
+    if (!Roles.userIsInRole(Meteor.userId(), ["admin", "shipping"])) {
       return false;
     }
     return ReactionCore.Collections.Shipping.update({
-      '_id': currentDoc
+      "_id": currentDoc
     }, updateDoc);
   }
 });
