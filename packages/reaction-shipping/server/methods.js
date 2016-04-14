@@ -84,7 +84,7 @@ Meteor.methods({
       return false;
     }
     return ReactionCore.Collections.Shipping.update({
-      "_id": currentDoc
+      _id: currentDoc
     }, updateDoc);
   }
 });
