@@ -153,7 +153,7 @@ Package.onTest(function (api) {
   api.use("accounts-password");
 
   // reaction core
-  api.use("reactioncommerce:reaction-checkout@1.0.0");
+  api.use("reactioncommerce:reaction-checkout@1.0.1");
   api.use("reactioncommerce:reaction-collections@2.2.0");
   api.use("reactioncommerce:reaction-factories@0.4.2");
   api.use("reactioncommerce:core@0.13.0");
@@ -162,4 +162,5 @@ Package.onTest(function (api) {
   api.addFiles("server/apptests/methods.app-test.js", "server");
   api.addFiles("server/apptests/shops.app-test.js", "server");
   api.addFiles("server/apptests/cart.app-test.js", "server");
+  api.addFiles("server/apptests/cartaddresses.app-test.js", "server");
 });
