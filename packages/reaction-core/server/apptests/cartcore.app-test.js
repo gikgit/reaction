@@ -1,4 +1,14 @@
 /* eslint dot-notation: 0 */
+
+// it(
+//   "should",
+//   done => {
+//
+//     return done();
+//   }
+// );
+
+
 describe("cart methods", function () {
   let user = Factory.create("user");
   const shop = faker.reaction.shops.getShop();
@@ -37,22 +47,19 @@ describe("cart methods", function () {
       // if you want to do a real stress test, you could try to comment out
       // this two lines and uncomment the following spyOn line. This is needed
       // only for `./reaction test`. In one package test this is ignoring.
-      if (Array.isArray(ReactionCore.Collections.Products._hookAspects.remove.
-        after) && ReactionCore.Collections.Products._hookAspects.remove.after.
-        length) {
+      if (Array.isArray(ReactionCore.Collections.Products._hookAspects.remove.after) && ReactionCore.Collections.Products._hookAspects.remove.after.length) {
         spyOn(ReactionCore.Collections.Cart._hookAspects.update.after[0],
           "aspect");
         spyOn(ReactionCore.Collections.Products._hookAspects.remove.after[0],
           "aspect");
       }
-
+  
       // this is needed for `inventory/remove`. Don't ask me why;)
       // spyOn(ReactionCore, "hasPermission").and.returnValue(true);
       ReactionCore.Collections.Products.remove({});
 
       // mock it. If you want to make full integration test, comment this out
-      spyOn(Meteor.server.method_handlers, "workflow/pushCartWorkflow").and.
-      callFake(() => true);
+      spyOn(Meteor.server.method_handlers, "workflow/pushCartWorkflow").and.callFake(() => true);
     });
 
     beforeEach(() => {
@@ -75,8 +82,7 @@ describe("cart methods", function () {
         });
 
         Meteor.call("cart/mergeCart", cart._id, sessionId);
-        anonymousCart = ReactionCore.Collections.
-          Cart.findOne(anonymousCart._id);
+        anonymousCart = ReactionCore.Collections.Cart.findOne(anonymousCart._id);
         cart = ReactionCore.Collections.Cart.findOne(cart._id);
 
         expect(ReactionCore.Collections.Cart.remove).toHaveBeenCalled();
@@ -125,14 +131,6 @@ describe("cart methods", function () {
         return done();
       }
     );
-
-    // it(
-    //   "should",
-    //   done => {
-    //
-    //     return done();
-    //   }
-    // );
   });
 
   describe("cart/createCart", function () {
@@ -238,14 +236,6 @@ describe("cart methods", function () {
         return done();
       }
     );
-
-    // it(
-    //   "should ",
-    //   done => {
-    //
-    //     return done();
-    //   }
-    // );
   });
 
   describe("cart/removeFromCart", function () {
@@ -355,161 +345,44 @@ describe("cart methods", function () {
     );
 
     it(
-       "should throw an error if order creation was failed",
-       done => {
-         const cart = Factory.create("cartToOrder");
-         spyOnMethod("copyCartToOrder", cart.userId);
-         // The main moment of test. We are spy on `insert` operation but do not
-         // let it through this call
-         spyOn(ReactionCore.Collections.Orders, "insert");
-         expect(() => {
-           return Meteor.call("cart/copyCartToOrder", cart._id);
-         }).toThrow(new Meteor.Error(400,
-           "cart/copyCartToOrder: Invalid request"));
-         expect(ReactionCore.Collections.Orders.insert).toHaveBeenCalled();
-
-         return done();
-       }
-    );
-
-    it(
-       "should create an order",
-       done => {
-         let cart = Factory.create("cartToOrder");
-         spyOn(ReactionCore, "shopIdAutoValue").and.returnValue(cart.shopId);
-         spyOn(ReactionCore, "getShopId").and.returnValue(cart.shopId);
-         spyOnMethod("copyCartToOrder", cart.userId);
-         // let's keep it simple. We don't want to see a long email about
-         // success. But I leave it here in case if anyone want to check whole
-         // method flow.
-         spyOn(ReactionCore.Collections.Orders, "insert");// .and.callThrough();
-         // const orderId = Meteor.call("cart/copyCartToOrder", cart._id);
-         expect(() => Meteor.call("cart/copyCartToOrder", cart._id)).
-           toThrow(new Meteor.Error(400,
-           "cart/copyCartToOrder: Invalid request"));
-         // we are satisfied with the following check
-         expect(ReactionCore.Collections.Orders.insert).toHaveBeenCalled();
-         // expect(typeof orderId).toEqual("string");
-
-         return done();
-       }
-    );
-  });
-
-  describe("cart/unsetAddresses", function () {
-    it(
-      "should correctly remove addresses from cart",
+      "should throw an error if order creation was failed",
       done => {
-        let cart = Factory.create("cart");
-        spyOnMethod("setShipmentAddress", cart.userId);
-        spyOnMethod("setPaymentAddress", cart.userId);
-
-        const cartId = cart._id;
-        const address = Object.assign({}, faker.reaction.address(), {
-          _id: Random.id(),
-          isShippingDefault: true,
-          isBillingDefault: true
-        });
-
-        Meteor.call("cart/setPaymentAddress", cartId, address);
-        Meteor.call("cart/setShipmentAddress", cartId, address);
-        cart = ReactionCore.Collections.Cart.findOne(cartId);
-
-        expect(cart.shipping[0].address._id).toEqual(address._id);
-        expect(cart.billing[0].address._id).toEqual(address._id);
-
-        // our Method checking
-        Meteor.call("cart/unsetAddresses", address._id, cart.userId);
-
-        cart = ReactionCore.Collections.Cart.findOne(cartId);
-
-        expect(cart.shipping[0].address).toBeUndefined();
-        expect(cart.billing[0].address).toBeUndefined();
+        const cart = Factory.create("cartToOrder");
+        spyOnMethod("copyCartToOrder", cart.userId);
+        // The main moment of test. We are spy on `insert` operation but do not
+        // let it through this call
+        spyOn(ReactionCore.Collections.Orders, "insert");
+        expect(() => {
+          return Meteor.call("cart/copyCartToOrder", cart._id);
+        }).toThrow(new Meteor.Error(400,
+          "cart/copyCartToOrder: Invalid request"));
+        expect(ReactionCore.Collections.Orders.insert).toHaveBeenCalled();
 
         return done();
       }
     );
 
     it(
-      "should throw error if wrong arguments were passed",
+      "should create an order",
       done => {
-        spyOn(ReactionCore.Collections.Accounts, "update");
-
-        expect(function () {
-          return Meteor.call("cart/unsetAddresses", 123456);
-        }).toThrow();
-
-        expect(function () {
-          return Meteor.call("cart/unsetAddresses", {});
-        }).toThrow();
-
-        expect(function () {
-          return Meteor.call("cart/unsetAddresses", null);
-        }).toThrow();
-
-        expect(function () {
-          return Meteor.call("cart/unsetAddresses");
-        }).toThrow();
-
-        expect(function () {
-          return Meteor.call("cart/unsetAddresses", "asdad", 123);
-        }).toThrow();
-
-        // https://github.com/aldeed/meteor-simple-schema/issues/522
-        expect(function () {
-          return Meteor.call(
-            "accounts/addressBookRemove", () => {
-              console.log("test");
-            }
-          );
-        }).not.toThrow();
-
-        expect(ReactionCore.Collections.Accounts.update).not.toHaveBeenCalled();
+        let cart = Factory.create("cartToOrder");
+        spyOn(ReactionCore, "shopIdAutoValue").and.returnValue(cart.shopId);
+        spyOn(ReactionCore, "getShopId").and.returnValue(cart.shopId);
+        spyOnMethod("copyCartToOrder", cart.userId);
+        // let's keep it simple. We don't want to see a long email about
+        // success. But I leave it here in case if anyone want to check whole
+        // method flow.
+        spyOn(ReactionCore.Collections.Orders, "insert");// .and.callThrough();
+        // const orderId = Meteor.call("cart/copyCartToOrder", cart._id);
+        expect(() => Meteor.call("cart/copyCartToOrder", cart._id)).
+        toThrow(new Meteor.Error(400,
+          "cart/copyCartToOrder: Invalid request"));
+        // we are satisfied with the following check
+        expect(ReactionCore.Collections.Orders.insert).toHaveBeenCalled();
+        // expect(typeof orderId).toEqual("string");
 
         return done();
       }
     );
-
-    it(
-      "should update cart via `type` argument",
-      done => {
-        let cart = Factory.create("cart");
-        spyOnMethod("setShipmentAddress", cart.userId);
-        spyOnMethod("setPaymentAddress", cart.userId);
-
-        const cartId = cart._id;
-        const address = Object.assign({}, faker.reaction.address(), {
-          _id: Random.id(),
-          isShippingDefault: true,
-          isBillingDefault: true
-        });
-        Meteor.call("cart/setPaymentAddress", cartId, address);
-        Meteor.call("cart/setShipmentAddress", cartId, address);
-        cart = ReactionCore.Collections.Cart.findOne(cartId);
-
-        expect(cart.shipping[0].address._id).toEqual(address._id);
-        expect(cart.billing[0].address._id).toEqual(address._id);
-
-        Meteor.call("cart/unsetAddresses", address._id, cart.userId,
-          "billing");
-        Meteor.call("cart/unsetAddresses", address._id, cart.userId,
-          "shipping");
-
-        cart = ReactionCore.Collections.Cart.findOne(cartId);
-
-        expect(cart.shipping[0].address).toBeUndefined();
-        expect(cart.billing[0].address).toBeUndefined();
-
-        return done();
-      }
-    );
-
-    // it(
-    //  "",
-    //  done => {
-    //    let account = Factory.create("account");
-    //    return done();
-    //  }
-    // );
   });
 });
