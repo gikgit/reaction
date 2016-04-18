@@ -58,6 +58,7 @@ Package.onUse(function (api) {
   api.use("aldeed:autoform@5.8.1");
   api.use("momentjs:moment@2.12.0");
   api.use("risul:moment-timezone@0.5.0_5");
+  api.use("xolvio:cleaner");
 
   // imply exports package vars
   api.imply("less");
@@ -159,8 +160,11 @@ Package.onTest(function (api) {
   api.use("reactioncommerce:core@0.13.0");
 
   // server integration tests
-  api.addFiles("server/apptests/methods.app-test.js", "server");
-  api.addFiles("server/apptests/shops.app-test.js", "server");
-  api.addFiles("server/apptests/cart.app-test.js", "server");
-  api.addFiles("server/apptests/cartaddresses.app-test.js", "server");
+  // api.addFiles("server/apptests/methods.app-test.js", "server");
+  // api.addFiles("server/apptests/shops.app-test.js", "server");
+  api.addFiles("server/apptests/cartcore.app-test.js", "server");
+  // api.addFiles("server/apptests/cartcreate.app-test.js", "server");
+  // api.addFiles("server/apptests/cartcopy.app-test.js", "server");
+  // api.addFiles("server/apptests/cartremove.app-test.js", "server");
+  // api.addFiles("server/apptests/cartaddresses.app-test.js", "server");
 });
