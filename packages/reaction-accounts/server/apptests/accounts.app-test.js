@@ -468,7 +468,7 @@ describe("Account Meteor method ", function () {
     );
   });
 
-  describe("addressBookRemove", function () {
+  xdescribe("addressBookRemove", function () {
     it(
       "should allow user to remove address",
       done => {

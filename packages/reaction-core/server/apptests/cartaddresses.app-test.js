@@ -18,114 +18,140 @@
 //   });
 // });
 
+describe("cart methods", function () {
+  let user = Factory.create("user");
+  let originals = {};
+  originals["mergeCart"] = Meteor.server
+    .method_handlers["cart/mergeCart"];
+  originals["copyCartToOrder"] = Meteor.server
+    .method_handlers["cart/copyCartToOrder"];
+  originals["addToCart"] = Meteor.server
+    .method_handlers["cart/addToCart"];
+  originals["setShipmentAddress"] = Meteor.server
+    .method_handlers["cart/setShipmentAddress"];
+  originals["setPaymentAddress"] = Meteor.server
+    .method_handlers["cart/setPaymentAddress"];
 
-describe("cart/unsetAddresses", function () {
-  it(
-    "should correctly remove addresses from cart",
-    done => {
-      let cart = Factory.create("cart");
-      // spyOnMethod("setShipmentAddress", cart.userId);
-      // spyOnMethod("setPaymentAddress", cart.userId);
-      //
-      // const cartId = cart._id;
-      // const address = Object.assign({}, faker.reaction.address(), {
-      //   _id: Random.id(),
-      //   isShippingDefault: true,
-      //   isBillingDefault: true
-      // });
-      //
-      // Meteor.call("cart/setPaymentAddress", cartId, address);
-      // Meteor.call("cart/setShipmentAddress", cartId, address);
-      // cart = ReactionCore.Collections.Cart.findOne(cartId);
-      //
-      // expect(cart.shipping[0].address._id).toEqual(address._id);
-      // expect(cart.billing[0].address._id).toEqual(address._id);
-      //
-      // // our Method checking
-      // Meteor.call("cart/unsetAddresses", address._id, cart.userId);
-      //
-      // cart = ReactionCore.Collections.Cart.findOne(cartId);
-      //
-      // expect(cart.shipping[0].address).toBeUndefined();
-      // expect(cart.billing[0].address).toBeUndefined();
+  function spyOnMethod(method, id) {
+    return spyOn(Meteor.server.method_handlers, `cart/${method}`).and.callFake(
+      function () {
+        this.userId = id;
+        return originals[method].apply(this, arguments);
+      }
+    );
+  }
 
-      return done();
-    }
-  );
+  afterAll(() => {
+    Meteor.users.remove({});
+  });
 
-  // it(
-  //   "should throw error if wrong arguments were passed",
-  //   done => {
-  //     spyOn(ReactionCore.Collections.Accounts, "update");
-  //
-  //     expect(function () {
-  //       return Meteor.call("cart/unsetAddresses", 123456);
-  //     }).toThrow();
-  //
-  //     expect(function () {
-  //       return Meteor.call("cart/unsetAddresses", {});
-  //     }).toThrow();
-  //
-  //     expect(function () {
-  //       return Meteor.call("cart/unsetAddresses", null);
-  //     }).toThrow();
-  //
-  //     expect(function () {
-  //       return Meteor.call("cart/unsetAddresses");
-  //     }).toThrow();
-  //
-  //     expect(function () {
-  //       return Meteor.call("cart/unsetAddresses", "asdad", 123);
-  //     }).toThrow();
-  //
-  //     // https://github.com/aldeed/meteor-simple-schema/issues/522
-  //     expect(function () {
-  //       return Meteor.call(
-  //         "accounts/addressBookRemove", () => {
-  //           console.log("test");
-  //         }
-  //       );
-  //     }).not.toThrow();
-  //
-  //     expect(ReactionCore.Collections.Accounts.update).not.toHaveBeenCalled();
-  //
-  //     return done();
-  //   }
-  // );
+  describe("cart/unsetAddresses", function () {
+    it(
+      "should correctly remove addresses from cart",
+      done => {
+        let cart = Factory.create("cart");
+        spyOnMethod("setShipmentAddress", cart.userId);
+        spyOnMethod("setPaymentAddress", cart.userId);
 
-  // it(
-  //   "should update cart via `type` argument",
-  //   done => {
-  //     let cart = Factory.create("cart");
-  //     spyOnMethod("setShipmentAddress", cart.userId);
-  //     spyOnMethod("setPaymentAddress", cart.userId);
-  //
-  //     const cartId = cart._id;
-  //     const address = Object.assign({}, faker.reaction.address(), {
-  //       _id: Random.id(),
-  //       isShippingDefault: true,
-  //       isBillingDefault: true
-  //     });
-  //     Meteor.call("cart/setPaymentAddress", cartId, address);
-  //     Meteor.call("cart/setShipmentAddress", cartId, address);
-  //     cart = ReactionCore.Collections.Cart.findOne(cartId);
-  //
-  //     expect(cart.shipping[0].address._id).toEqual(address._id);
-  //     expect(cart.billing[0].address._id).toEqual(address._id);
-  //
-  //     Meteor.call("cart/unsetAddresses", address._id, cart.userId,
-  //       "billing");
-  //     Meteor.call("cart/unsetAddresses", address._id, cart.userId,
-  //       "shipping");
-  //
-  //     cart = ReactionCore.Collections.Cart.findOne(cartId);
-  //
-  //     expect(cart.shipping[0].address).toBeUndefined();
-  //     expect(cart.billing[0].address).toBeUndefined();
-  //
-  //     return done();
-  //   }
-  // );
+        const cartId = cart._id;
+        const address = Object.assign({}, faker.reaction.address(), {
+          _id: Random.id(),
+          isShippingDefault: true,
+          isBillingDefault: true
+        });
 
+        Meteor.call("cart/setPaymentAddress", cartId, address);
+        Meteor.call("cart/setShipmentAddress", cartId, address);
+        cart = ReactionCore.Collections.Cart.findOne(cartId);
+
+        expect(cart.shipping[0].address._id).toEqual(address._id);
+        expect(cart.billing[0].address._id).toEqual(address._id);
+
+        // our Method checking
+        Meteor.call("cart/unsetAddresses", address._id, cart.userId);
+
+        cart = ReactionCore.Collections.Cart.findOne(cartId);
+
+        expect(cart.shipping[0].address).toBeUndefined();
+        expect(cart.billing[0].address).toBeUndefined();
+
+        return done();
+      }
+    );
+
+    it(
+      "should throw error if wrong arguments were passed",
+      done => {
+        spyOn(ReactionCore.Collections.Accounts, "update");
+
+        expect(function () {
+          return Meteor.call("cart/unsetAddresses", 123456);
+        }).toThrow();
+
+        expect(function () {
+          return Meteor.call("cart/unsetAddresses", {});
+        }).toThrow();
+
+        expect(function () {
+          return Meteor.call("cart/unsetAddresses", null);
+        }).toThrow();
+
+        expect(function () {
+          return Meteor.call("cart/unsetAddresses");
+        }).toThrow();
+
+        expect(function () {
+          return Meteor.call("cart/unsetAddresses", "asdad", 123);
+        }).toThrow();
+
+        // https://github.com/aldeed/meteor-simple-schema/issues/522
+        expect(function () {
+          return Meteor.call(
+            "accounts/addressBookRemove", () => {
+              console.log("test");
+            }
+          );
+        }).not.toThrow();
+
+        expect(ReactionCore.Collections.Accounts.update).not.toHaveBeenCalled();
+
+        return done();
+      }
+    );
+
+    it(
+      "should update cart via `type` argument",
+      done => {
+        let cart = Factory.create("cart");
+        spyOnMethod("setShipmentAddress", cart.userId);
+        spyOnMethod("setPaymentAddress", cart.userId);
+
+        const cartId = cart._id;
+        const address = Object.assign({}, faker.reaction.address(), {
+          _id: Random.id(),
+          isShippingDefault: true,
+          isBillingDefault: true
+        });
+        Meteor.call("cart/setPaymentAddress", cartId, address);
+        Meteor.call("cart/setShipmentAddress", cartId, address);
+        cart = ReactionCore.Collections.Cart.findOne(cartId);
+
+        expect(cart.shipping[0].address._id).toEqual(address._id);
+        expect(cart.billing[0].address._id).toEqual(address._id);
+
+        Meteor.call("cart/unsetAddresses", address._id, cart.userId,
+          "billing");
+        Meteor.call("cart/unsetAddresses", address._id, cart.userId,
+          "shipping");
+
+        cart = ReactionCore.Collections.Cart.findOne(cartId);
+
+        expect(cart.shipping[0].address).toBeUndefined();
+        expect(cart.billing[0].address).toBeUndefined();
+
+        return done();
+      }
+    );
+
+  });
 });
-

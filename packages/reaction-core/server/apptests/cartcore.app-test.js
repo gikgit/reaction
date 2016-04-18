@@ -1,15 +1,37 @@
 /* eslint dot-notation: 0 */
 
-// it(
-//   "should",
-//   done => {
-//
-//     return done();
-//   }
-// );
+import { Meteor } from "meteor/meteor";
+
+
+cleanDb = function (opts) {
+  console.log("Running cleanDb");
+  let options = opts || {};
+  let excludedCollections = ["system.indexes"];
+  if (options.excludedCollections) {
+    excludedCollections = excludedCollections.concat(options.excludedCollections);
+  }
+
+  const db = MongoInternals.defaultRemoteCollectionDriver().mongo.db;
+  const getCollections = Meteor.wrapAsync(db.collections, db);
+  let collections = getCollections();
+  let appCollections = _.reject(collections, function (col) {
+    return col.collectionName.indexOf('velocity') === 0 ||
+      excludedCollections.indexOf(col.collectionName) !== -1;
+  });
+
+  _.each(appCollections, function (appCollection) {
+    var remove = Meteor.wrapAsync(appCollection.remove, appCollection);
+    remove({});
+  });
+};
 
 
 describe("cart methods", function () {
+  beforeEach(() => {
+    // cleanDb();
+
+  });
+
   let user = Factory.create("user");
   const shop = faker.reaction.shops.getShop();
   let userId = user._id;
@@ -41,115 +63,6 @@ describe("cart methods", function () {
     Meteor.users.remove({});
   });
 
-  describe("cart/mergeCart", () => {
-    beforeAll(() => {
-      // We are mocking inventory hooks, because we don't need them here, but
-      // if you want to do a real stress test, you could try to comment out
-      // this two lines and uncomment the following spyOn line. This is needed
-      // only for `./reaction test`. In one package test this is ignoring.
-      if (Array.isArray(ReactionCore.Collections.Products._hookAspects.remove.after) && ReactionCore.Collections.Products._hookAspects.remove.after.length) {
-        spyOn(ReactionCore.Collections.Cart._hookAspects.update.after[0],
-          "aspect");
-        spyOn(ReactionCore.Collections.Products._hookAspects.remove.after[0],
-          "aspect");
-      }
-  
-      // this is needed for `inventory/remove`. Don't ask me why;)
-      // spyOn(ReactionCore, "hasPermission").and.returnValue(true);
-      ReactionCore.Collections.Products.remove({});
-
-      // mock it. If you want to make full integration test, comment this out
-      spyOn(Meteor.server.method_handlers, "workflow/pushCartWorkflow").and.callFake(() => true);
-    });
-
-    beforeEach(() => {
-      ReactionCore.Collections.Cart.remove({});
-    });
-
-    it(
-      "should merge all `anonymous` carts into existent `normal` user cart" +
-      " per session, when logged in",
-      () => {
-        let anonymousCart = Factory.create("anonymousCart");
-        let cart = Factory.create("cart");
-        spyOnMethod("mergeCart", cart.userId);
-        spyOn(ReactionCore, "getShopId").and.returnValue(shop._id);
-        spyOn(ReactionCore.Collections.Cart, "remove").and.callThrough();
-        ReactionCore.Collections.Cart.update({}, {
-          $set: {
-            sessionId: sessionId
-          }
-        });
-
-        Meteor.call("cart/mergeCart", cart._id, sessionId);
-        anonymousCart = ReactionCore.Collections.Cart.findOne(anonymousCart._id);
-        cart = ReactionCore.Collections.Cart.findOne(cart._id);
-
-        expect(ReactionCore.Collections.Cart.remove).toHaveBeenCalled();
-        expect(anonymousCart).toBeUndefined();
-        expect(cart.items.length).toBe(2);
-      }
-    );
-
-    it(
-      "should merge only into registered user cart",
-      done => {
-        const cart = Factory.create("anonymousCart");
-        spyOnMethod("mergeCart", cart.userId);
-        spyOn(ReactionCore, "getShopId").and.returnValue(shop._id);
-        const cartId = cart._id;
-
-        // now we try to merge two anonymous carts. We expect to see `false`
-        // result
-        expect(Meteor.call("cart/mergeCart", cartId)).toBeFalsy();
-
-        return done();
-      }
-    );
-
-    it(
-      "should throw an error if cart doesn't exist",
-      done => {
-        spyOnMethod("mergeCart", "someIdHere");
-        expect(() => {
-          return Meteor.call("cart/mergeCart", "cartIdHere", sessionId);
-        }).toThrow(new Meteor.Error(403, "Access Denied"));
-
-        return done();
-      }
-    );
-
-    it(
-      "should throw an error if cart user is not current user",
-      done => {
-        let cart = Factory.create("cart");
-        spyOnMethod("mergeCart", "someIdHere");
-        expect(() => {
-          return Meteor.call("cart/mergeCart", cart._id, sessionId);
-        }).toThrow(new Meteor.Error(403, "Access Denied"));
-
-        return done();
-      }
-    );
-  });
-
-  describe("cart/createCart", function () {
-    it("should create a test cart", function (done) {
-      spyOnMethod("mergeCart", userId);
-      spyOn(ReactionCore, "shopIdAutoValue").and.returnValue(shop._id);
-      spyOn(ReactionCore, "getShopId").and.returnValue(shop._id);
-      spyOn(ReactionCore.Collections.Cart, "insert").and.callThrough();
-
-      let cartId = Meteor.call("cart/createCart", userId, sessionId);
-      let cart = ReactionCore.Collections.Cart.findOne({
-        userId: userId
-      });
-      expect(ReactionCore.Collections.Cart.insert).toHaveBeenCalled();
-      expect(cartId).toEqual(cart._id);
-
-      done();
-    });
-  });
 
   describe("cart/addToCart", function () {
     const quantity = 1;
@@ -168,7 +81,8 @@ describe("cart methods", function () {
     });
 
     beforeEach(function () {
-      ReactionCore.Collections.Cart.remove({});
+      console.log("beforeEach");
+      ReactionCore.Collections.Cart.direct.remove({});
     });
 
     it(
@@ -184,6 +98,21 @@ describe("cart methods", function () {
         expect(cart.items[cart.items.length - 1].productId).toEqual(productId);
 
         done();
+      }
+    );
+
+    it(
+      "should throw error an exception if user doesn't have a cart",
+      done => {
+        const  userWithoutCart = Factory.create("user");
+        spyOnMethod("addToCart", userWithoutCart._id);
+        expect(() => {
+          return Meteor.call("cart/addToCart", productId, variantId,
+            quantity);
+        }).toThrow(new Meteor.Error(404, "Cart not found",
+          "Cart not found for user with such id"));
+
+        return done();
       }
     );
 
@@ -207,20 +136,6 @@ describe("cart methods", function () {
       }
     );
 
-    it(
-      "should throw error an exception if user doesn't have a cart",
-      done => {
-        const  userWithoutCart = Factory.create("user");
-        spyOnMethod("addToCart", userWithoutCart._id);
-        expect(() => {
-          return Meteor.call("cart/addToCart", productId, variantId,
-            quantity);
-        }).toThrow(new Meteor.Error(404, "Cart not found",
-          "Cart not found for user with such id"));
-
-        return done();
-      }
-    );
 
     it(
       "should throw error an exception if product doesn't exists",
@@ -232,154 +147,6 @@ describe("cart methods", function () {
             quantity);
         }).toThrow(new Meteor.Error(404, "Product not found",
           "Product with such id was not found!"));
-
-        return done();
-      }
-    );
-  });
-
-  describe("cart/removeFromCart", function () {
-    beforeEach(function () {
-      ReactionCore.Collections.Cart.remove({});
-    });
-
-    it(
-      "should remove item from cart",
-      function (done) {
-        let cart = Factory.create("cart");
-        const cartUserId = cart.userId;
-
-        spyOn(ReactionCore, "shopIdAutoValue").and.returnValue(shop._id);
-        spyOn(ReactionCore, "getShopId").and.returnValue(shop._id);
-        spyOn(Meteor, "userId").and.returnValue(cartUserId);
-        spyOn(ReactionCore.Collections.Cart, "update").and.callThrough();
-
-        cart = ReactionCore.Collections.Cart.findOne(cart._id);
-        const cartItemId = cart.items[0]._id;
-        expect(cart.items.length).toEqual(2);
-
-        Meteor.call("cart/removeFromCart", cartItemId);
-
-        // mongo update should be called
-        expect(ReactionCore.Collections.Cart.update.calls.count()).toEqual(1);
-        cart = ReactionCore.Collections.Cart.findOne(cart._id);
-
-        // fixme: we expect decrease the number of items, but this does not
-        // occur by some unknown reason
-        // This was work for a while, but I forgot how I fix it :(
-        // this test could be broken because of `shopIdAutoValue` if it is
-        // setting shopId (`$set`) on `$pull`
-        expect(cart.items.length).toEqual(1);
-
-        return done();
-      }
-    );
-
-    it(
-      "should throw an exception when attempting to remove item from cart " +
-      "of another user",
-      done => {
-        const cart = Factory.create("cart");
-        const cartItemId = "testId123";
-        spyOn(Meteor, "userId").and.returnValue(cart.userId);
-        expect(() => {
-          return Meteor.call("cart/removeFromCart", cartItemId);
-        }).toThrow(new Meteor.Error(404, "Cart item not found.",
-          "Unable to find an item with such id within you cart."));
-
-        return done();
-      }
-    );
-
-    it(
-      "should throw an exception when attempting to remove non-existing item",
-      done => {
-        const cart = Factory.create("cart");
-        const cartItemId = Random.id();
-        spyOn(Meteor, "userId").and.returnValue(cart.userId);
-        expect(() => {
-          return Meteor.call("cart/removeFromCart", cartItemId);
-        }).toThrow(new Meteor.Error(404, "Cart item not found.",
-          "Unable to find an item with such id within you cart."));
-
-        return done();
-      }
-    );
-  });
-
-  describe("cart/copyCartToOrder", () => {
-    it(
-      "should throw error if cart user not current user",
-      done => {
-        const cart = Factory.create("cart");
-        spyOnMethod("copyCartToOrder", "wrongUserId");
-        expect(() => {
-          return Meteor.call("cart/copyCartToOrder", cart._id);
-        }).toThrow(new Meteor.Error(403, "Access Denied"));
-
-        return done();
-      }
-    );
-
-    it(
-      "should throw error if cart has not items",
-      done => {
-        const user1 = Factory.create("user");
-        spyOn(ReactionCore, "getShopId").and.returnValue(shop._id);
-        spyOn(ReactionCore.Collections.Accounts, "findOne").and.returnValue({
-          emails: [{
-            address: "test@localhost",
-            provides: "default"
-          }]
-        });
-        spyOnMethod("copyCartToOrder", user1._id);
-        const cartId = Meteor.call("cart/createCart", user1._id, sessionId);
-        expect(cartId).toBeDefined();
-        expect(() => {
-          return Meteor.call("cart/copyCartToOrder", cartId);
-        }).toThrow(new Meteor.Error("An error occurred saving the order." +
-          " Missing cart items."));
-
-        return done();
-      }
-    );
-
-    it(
-      "should throw an error if order creation was failed",
-      done => {
-        const cart = Factory.create("cartToOrder");
-        spyOnMethod("copyCartToOrder", cart.userId);
-        // The main moment of test. We are spy on `insert` operation but do not
-        // let it through this call
-        spyOn(ReactionCore.Collections.Orders, "insert");
-        expect(() => {
-          return Meteor.call("cart/copyCartToOrder", cart._id);
-        }).toThrow(new Meteor.Error(400,
-          "cart/copyCartToOrder: Invalid request"));
-        expect(ReactionCore.Collections.Orders.insert).toHaveBeenCalled();
-
-        return done();
-      }
-    );
-
-    it(
-      "should create an order",
-      done => {
-        let cart = Factory.create("cartToOrder");
-        spyOn(ReactionCore, "shopIdAutoValue").and.returnValue(cart.shopId);
-        spyOn(ReactionCore, "getShopId").and.returnValue(cart.shopId);
-        spyOnMethod("copyCartToOrder", cart.userId);
-        // let's keep it simple. We don't want to see a long email about
-        // success. But I leave it here in case if anyone want to check whole
-        // method flow.
-        spyOn(ReactionCore.Collections.Orders, "insert");// .and.callThrough();
-        // const orderId = Meteor.call("cart/copyCartToOrder", cart._id);
-        expect(() => Meteor.call("cart/copyCartToOrder", cart._id)).
-        toThrow(new Meteor.Error(400,
-          "cart/copyCartToOrder: Invalid request"));
-        // we are satisfied with the following check
-        expect(ReactionCore.Collections.Orders.insert).toHaveBeenCalled();
-        // expect(typeof orderId).toEqual("string");
 
         return done();
       }

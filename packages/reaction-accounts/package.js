@@ -118,21 +118,21 @@ Package.onUse(function (api) {
 });
 
 Package.onTest(function (api) {
-  api.use("sanjo:jasmine@0.21.0");
   api.use("ecmascript");
   api.use("random");
-
   api.use("underscore");
-  api.use("velocity:html-reporter@0.9.1");
-  api.use("velocity:console-reporter@0.1.4");
+
+  api.use("sanjo:jasmine@1.0.1");
+  api.use("velocity:html-reporter@0.10.0");
+  api.use("velocity:console-reporter@0.2.1");
 
   api.use("reactioncommerce:core");
   api.use("reactioncommerce:reaction-accounts");
   api.use("reactioncommerce:reaction-i18n@2.0.0");
   api.use("reactioncommerce:reaction-factories@0.4.2");
 
-  api.addFiles("tests/jasmine/client/integration/login.js", "client");
-  api.addFiles("tests/jasmine/server/integration/accounts.js", "server");
-  api.addFiles("tests/jasmine/server/integration/publications.js", "server");
-  api.addFiles("tests/jasmine/server/integration/validation.js", "server");
+  // api.addFiles("tests/jasmine/client/integration/login.js", "client");
+  // api.addFiles("server/apptests/accounts.app-test.js", "server");
+  api.addFiles("server/apptests/publications.app-test.js", "server");
+  api.addFiles("server/apptests/validation.app-test.js", "server");
 });
